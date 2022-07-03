@@ -5,12 +5,19 @@ def Binary_Converter(Num):
     result = '0'*(8-len(binary))+binary
     return result
 
-def Opcode(ins,reg=-1):
+def Opcode(inst,reg=-1):
     dic= {"add":"10000", "sub":"10001",
         "mov":["10010","10011"],  
         "ld":"10100", "st":"10101", "mul":"10110", "div":"10111", "rs":"11000", "ls":"11001", "xor":"11010", "or":"11011", "and":"11100", "not":"11101", "cmp":"11110", "jmp":"11111", "jlt":"01100", "jgt":"01101", "je":"01111", "hlt":"01010"}
 
-def ISA_type(ins, reg= -1):
+
+    if(reg == 0):
+        return dic["mov"][0]
+    elif(reg == 1):
+        return dic["mov"][1]
+    return dic[inst]
+    
+def ISA_type(inst, reg= -1):
    
     prakaar= {  'a': ["add", "sub", "mul", "xor", "or", "and"],
                 'b': ["mov", "rs", "ls"],
@@ -24,7 +31,7 @@ def ISA_type(ins, reg= -1):
     if(reg==1):
         return 'c'
     for i in prakaar.keys():
-        if ins in prakaar[i]:
+        if inst in prakaar[i]:
             return i
     return -1
 
@@ -33,10 +40,12 @@ def reg_addr(reg):
     if(reg in regs.keys()):
         return regs[reg]
     return -1
-
-ASM_Code = []
+    
+    
+    
+assemblycode = []
 for line in sys.stdin:
-    ASM_Code.append(line)
+    assemblycode.append(line)
 
 Bin_res = [] 
 Errors = []  
@@ -48,7 +57,7 @@ var = dict()
 dec_var = True
 
 varl = 0
-for line in ASM_Code:
+for line in assemblycode:
     if (not line):
         continue
     elif(line.split()[0] == "var"):
@@ -58,24 +67,24 @@ for line in ASM_Code:
 
 
 khaali_rekha = 0
-for line in ASM_Code:
+for line in assemblycode:
     if(not line):
         khaali_rekha += 1
 
 temporary = varl
-nvar_add = len(ASM_Code) - varl - khaali_rekha
+nvar_add = len(assemblycode) - varl - khaali_rekha
 num=1
 while(varl):
-    if(not ASM_Code[0]):
+    if(not assemblycode[0]):
         num += 1
         continue
-    line = ASM_Code[0].split()
+    line = assemblycode[0].split()
     if(line[0] == "var" and len(line) == 2):
         if(line[1] not in var.keys()):
             var[line[1]] = Binary_Converter(nvar_add)
             nvar_add += 1
             varl -= 1
-            ASM_Code.pop(0)
+            assemblycode.pop(0)
             num+= 1
             continue
         else:
@@ -85,7 +94,7 @@ while(varl):
     elif(line[0] == "var"):
         Errors.append("Error found at line " + str(num) + ": Invalid variable declaration!!!")
         varl-= 1
-        ASM_Code.pop(0)
+        assemblycode.pop(0)
         num+= 1
         continue
     else:
@@ -95,25 +104,25 @@ dec_var = False
 varl = temporary
 
 
-for lnum in range(len(ASM_Code)):
-    if(not ASM_Code[lnum]):
+for lnum in range(len(assemblycode)):
+    if(not assemblycode[lnum]):
         continue
-    cur_line = ASM_Code[lnum].split()
-    if (ASM_Code[lnum].split()[0][-1] == ":"):
-        if((ASM_Code[lnum].split()[0][:len(ASM_Code[lnum].split()[0]) - 1:]) not in tag.keys()):
-            tag[(ASM_Code[lnum].split()[0][:len(ASM_Code[lnum].split()[0]) - 1:])] = Binary_Converter(lnum)
+    cur_line = assemblycode[lnum].split()
+    if (assemblycode[lnum].split()[0][-1] == ":"):
+        if((assemblycode[lnum].split()[0][:len(assemblycode[lnum].split()[0]) - 1:]) not in tag.keys()):
+            tag[(assemblycode[lnum].split()[0][:len(assemblycode[lnum].split()[0]) - 1:])] = Binary_Converter(lnum)
             temporary = ""
-            for i in range(1,len(ASM_Code[lnum].split())):
-                temporary += ASM_Code[lnum].split()[i] + " "
-            ASM_Code[lnum] = temporary
+            for i in range(1,len(assemblycode[lnum].split())):
+                temporary += assemblycode[lnum].split()[i] + " "
+            assemblycode[lnum] = temporary
         else:
             Errors.append("Error found at line " + str(lnum + varl + 1) + ": Multiple declaration found!!!")
             continue
 
-for lnum in range(len(ASM_Code)):
+for lnum in range(len(assemblycode)):
 
 
-    cur_line = ASM_Code[lnum].split()
+    cur_line = assemblycode[lnum].split()
     if (not cur_line):
         continue
     if (cur_line[0] == "var" and not dec_var):
@@ -216,7 +225,7 @@ for lnum in range(len(ASM_Code)):
         if(reg_addr(cur_line[1]) == "111"):
             Errors.append("Error found at line " + str(lnum + varl + 1) + ": Invalid FLAGS!!!")
             continue
-        if (cur_line[2] not in varl.keys()):
+        if (cur_line[2] not in var.keys()):
             if(cur_line[2] in tag.keys()):
                 Errors.append("Error found at line " + str(lnum + varl + 1) + ": Label used as variable!!!")
                 continue
